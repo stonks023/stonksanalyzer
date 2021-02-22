@@ -13,6 +13,8 @@ public class DataProvider {
             return FileReader.readExistingFile(StonksUtility.generateFilePath(company));
         }
 
+        System.out.println(String.format("Data not found for %s, going to download it", company));
+
         StringBuilder builder = new StringBuilder();
 
         try {
@@ -30,6 +32,7 @@ public class DataProvider {
             String output;
             System.out.println("Output from Server .... \n");
 
+            // Alphavantage sends 200 for throttled calls as well
             while ((output = br.readLine()) != null) {
                 builder.append(output + System.lineSeparator());
             }
@@ -42,12 +45,26 @@ public class DataProvider {
             e.printStackTrace();
 
         }
-        return builder.toString();
+
+        /*
+        need to check if we are getting throttled
+        {
+            "Note": "Thank you for using Alpha Vantage! Our standard API call frequency is 5 calls per minute and 500 calls per day.
+            Please visit https://www.alphavantage.co/premium/ if you would like to target a higher API call frequency."
+        }
+         */
+        String returnData = builder.toString();
+        if (returnData.contains("Thank you for using Alpha Vantage")) {
+            return "";
+        } else {
+            return returnData;
+        }
     }
 
     public static boolean storeCompanyData(String company, String data) {
         // TODO: Don't need to have folder for date
-        if (dataExistsForCompany(company)) {
+        if (dataExistsForCompany(company) || data.isEmpty()) {
+            System.out.println(String.format("Data either already exists for company %s or is empty: %b", company, data.isEmpty()));
             return false;
         }
 
